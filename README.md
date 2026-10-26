@@ -65,6 +65,31 @@ Prereqs: Docker + Compose, and a local **Ollama** (or any OpenAI-compatible endp
 **tool-calling** model. `rafw007/gemma4-e4b-claude-coder:latest` is the tuned default. Point `LLM_BASE_URL` at your server
 (e.g. `http://100.64.138.60:11434/v1` for Ollama on the Docker host).
 
+# How to setup lab
+
+```bash
+# Command to start, stop or reset the docker labs
+./reset.sh up      # build (if needed) + start both stacks   [default]
+./reset.sh reset   # wipe containers + volumes, rebuild, start fresh
+./reset.sh down    # stop + remove containers (KEEPS data volumes)
+./reset.sh logs    # tail logs from both stacks
+./reset.sh status  # show container status for both
+
+#Lab Endpoint:
+http://localhost:3200
+
+# User related commands
+./scoreboard-dashboard/scoreboard-admin.sh list                       # id, username, email, score, stages, sessions
+./scoreboard-dashboard/scoreboard-admin.sh delete marcus              # by username (case-insensitive) — prompts first
+./scoreboard-dashboard/scoreboard-admin.sh delete 3 alice@example.com --yes   # by id / email, no prompt
+./scoreboard-dashboard/scoreboard-admin.sh reset-captures marcus      # clear their flags, keep the account
+./scoreboard-dashboard/scoreboard-admin.sh reset-password marcus      # new password, score kept (see above)
+./scoreboard-dashboard/scoreboard-admin.sh check-emails               # accounts outside the allowed domain
+./scoreboard-dashboard/scoreboard-admin.sh backup ./snap.db           # consistent snapshot (see below)
+./scoreboard-dashboard/scoreboard-admin.sh restore ./snap.db          # replace the live DB
+./scoreboard-dashboard/scoreboard-admin.sh logout marcus              # revoke active sessions only
+```
+
 Smoke tests:
 ```bash
 curl -s localhost:8100/api/health | jq          # lists the 16 tools
