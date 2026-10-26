@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-ink text-fg font-body antialiased;
+    /* Faint blueprint grid — reinforces the "schematic" identity. */
+    background-image:
+      linear-gradient(rgba(35, 48, 71, 0.25) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(35, 48, 71, 0.25) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: center top;
+  }
+  ::selection {
+    background: rgba(61, 216, 196, 0.3);
+  }
+}
+
+@layer utilities {
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.22em] text-muted;
+  }
+  .hairline {
+    @apply border-line;
+  }
+  .scroll-slim::-webkit-scrollbar {
+    width: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-thumb {
+    background: #233047;
+    border-radius: 8px;
+  }
+  .scroll-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+  }
+}

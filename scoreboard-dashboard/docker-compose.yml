@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: ./backend
+    container_name: helix-scoreboard-backend
+    restart: unless-stopped
+    environment:
+      # Flag values — defaults match combined-chain-lab. Override here (or via a
+      # .env file) if the lab was deployed with custom flags.
+      - FLAG1=${FLAG1:-FLAG{CHAIN_STATUS_INFO_DISCLOSURE}}
+      - FLAG2=${FLAG2:-FLAG{CHAIN_SIGNER_PRIVILEGE_ESCALATION}}
+      - FLAG3=${FLAG3:-FLAG{CHAIN_ADMIN_BOLA_CONFUSED_DEPUTY}}
+      - FLAG4=${FLAG4:-FLAG{CHAIN_ADMIN_RCE_COMMAND_INJECTION}}
+      # Stable secret so sessions survive a restart. CHANGE THIS in real use.
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-please-set-a-long-random-secret}
+      # Set to 1 when serving over HTTPS so the session cookie is Secure-only.
+      - COOKIE_SECURE=${COOKIE_SECURE:-0}
+      - LAB_URL=${LAB_URL:-http://localhost:3100}
+      - DB_PATH=/data/scoreboard.db
+    volumes:
+      - scoreboard-data:/data
+    # No host port: only nginx (same Docker network) reaches the backend.
+    expose:
+      - "8200"
+
+  frontend:
+    build: ./frontend
+    container_name: helix-scoreboard-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3200:3200"
+
+volumes:
+  scoreboard-data:

@@ -1,0 +1,79 @@
+services:
+  signer:
+    build: ./signer
+    container_name: combined-chain-signer
+    # NOTE: no `ports:` mapping. The Session Signer is reachable ONLY over the private
+    # `lab` network via the leaked SIGNER_URL -- that is what makes it the pivot target.
+    environment:
+      - SIGNING_KEY=${SIGNING_KEY:-helix-signing-key-2026}
+      # Session-token lifetime. Generous (2h) so a real, human-paced multi-stage solve never
+      # expires a token mid-chain; the token remains forgeable regardless (that is the lab).
+      - TOKEN_TTL=${TOKEN_TTL:-7200}
+    networks:
+      - lab
+
+  mcp-server:
+    build:
+      context: ./mcp-server
+      args:
+        # FLAG 4 is baked into /root/flag.txt inside the image at build time. Kept in sync
+        # with the backend verifier via the same env var. Never given to either LLM.
+        - FLAG4=${FLAG4:-FLAG{CHAIN_ADMIN_RCE_COMMAND_INJECTION}}
+    container_name: combined-chain-mcp
+    ports:
+      - "8101:8001"
+    depends_on:
+      - signer
+    environment:
+      - SIGNING_KEY=${SIGNING_KEY:-helix-signing-key-2026}
+      - SIGNER_URL=${SIGNER_URL:-http://signer:9003/sign}
+      - TOKEN_TTL=${TOKEN_TTL:-7200}
+      - FLAG1=${FLAG1:-FLAG{CHAIN_STATUS_INFO_DISCLOSURE}}
+      - FLAG2=${FLAG2:-FLAG{CHAIN_SIGNER_PRIVILEGE_ESCALATION}}
+      - FLAG3=${FLAG3:-FLAG{CHAIN_ADMIN_BOLA_CONFUSED_DEPUTY}}
+    networks:
+      - lab
+
+  backend:
+    build: ./backend
+    container_name: combined-chain-backend
+    ports:
+      - "8100:8000"
+    depends_on:
+      - mcp-server
+    environment:
+      - LLM_BASE_URL=${LLM_BASE_URL:-http://100.64.138.60:11434/v1}
+      - LLM_API_KEY=${LLM_API_KEY:-ollama}
+      - FRONTEND_MODEL=${FRONTEND_MODEL:-rafw007/gemma4-e4b-claude-coder:latest}
+      - BACKEND_MODEL=${BACKEND_MODEL:-rafw007/gemma4-e4b-claude-coder:latest}
+      - MCP_SERVER_URL=${MCP_SERVER_URL:-http://mcp-server:8001/mcp}
+      - LLM_TIMEOUT=${LLM_TIMEOUT:-180}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - TOOL_CALL_RETRIES=${TOOL_CALL_RETRIES:-6}
+      - RETRY_TEMPERATURE=${RETRY_TEMPERATURE:-0.85}
+      - BACKEND_HISTORY_LIMIT=${BACKEND_HISTORY_LIMIT:-8}
+      - FRONTEND_HISTORY_LIMIT=${FRONTEND_HISTORY_LIMIT:-8}
+      # Only used by /api/verify to grade a captured flag; never given to either LLM.
+      - FLAG1=${FLAG1:-FLAG{CHAIN_STATUS_INFO_DISCLOSURE}}
+      - FLAG2=${FLAG2:-FLAG{CHAIN_SIGNER_PRIVILEGE_ESCALATION}}
+      - FLAG3=${FLAG3:-FLAG{CHAIN_ADMIN_BOLA_CONFUSED_DEPUTY}}
+      - FLAG4=${FLAG4:-FLAG{CHAIN_ADMIN_RCE_COMMAND_INJECTION}}
+    extra_hosts:
+      # Lets the backend reach a model server (e.g. Ollama) on the host.
+      - "host.docker.internal:host-gateway"
+    networks:
+      - lab
+
+  frontend:
+    build: ./frontend
+    container_name: combined-chain-frontend
+    ports:
+      - "3100:3000"
+    depends_on:
+      - backend
+    networks:
+      - lab
+
+networks:
+  lab:
+    driver: bridge
