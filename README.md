@@ -57,8 +57,6 @@ source labs without collisions.
 
 ```bash
 cp .env.example .env         # then edit LLM_BASE_URL / models if needed
-docker compose up --build
-# open http://localhost:3100
 ```
 
 Prereqs: Docker + Compose, and a local **Ollama** (or any OpenAI-compatible endpoint) serving a
